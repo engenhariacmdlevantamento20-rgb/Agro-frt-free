@@ -1,7 +1,7 @@
 #!/bin/bash
 # Mac/Linux: abra o Terminal na pasta e rode: bash publicar.sh
 cd "$(dirname "$0")"
-SITE="shimmering-dodol-ff6e33"   # troque se o nome do seu site no Netlify for outro
+SITE="agrofretebr"
 command -v node >/dev/null || { echo "Instale o Node.js (versão LTS) em https://nodejs.org e rode de novo."; exit 1; }
 echo "[1/3] Instalando..."; npm install || exit 1
 if [ ! -f .netlify/state.json ]; then
