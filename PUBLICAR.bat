@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 rem === Troque aqui se o nome do seu site no Netlify for outro ===
-set SITE=shimmering-dodol-ff6e33
+set SITE=agrofretebr
 
 echo.
 echo === Agro Frete: publicar no Netlify ===

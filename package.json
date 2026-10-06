@@ -1,0 +1,40 @@
+{
+  "name": "agro-frete",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/check-project.mjs",
+    "db:generate": "drizzle-kit generate --name create_agro_frete"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3",
+    "@netlify/database": "^1.1.0",
+    "@netlify/functions": "^6.0.2",
+    "@netlify/identity": "^1.2.0",
+    "drizzle-orm": "^1.0.0-beta.22",
+    "maplibre-gl": "^6.13.0",
+    "next": "^15.5.27",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/web-push": "^3.6.3",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "postcss": "^8.5.29"
+  }
+}

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser, type SessionUser } from "./auth";
 import { pool } from "./db";
+import { verifyRequestOrigin } from "@netlify/identity";
 
 export class HttpError extends Error { constructor(public status: number, msg: string) { super(msg); } }
 
@@ -15,18 +16,26 @@ export async function requireUser(role?: string): Promise<SessionUser> {
 export function route<A extends unknown[]>(fn: (...a: A) => Promise<unknown>) {
   return async (...a: A): Promise<Response> => {
     try {
+      const request = a[0];
+      if (request instanceof Request && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+        try { verifyRequestOrigin(request); } catch { throw new HttpError(403, "Origem não permitida."); }
+      }
       const r = await fn(...a);
       return r instanceof Response ? r : NextResponse.json(r);
     } catch (e) {
       if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
-      console.error(e);
+      console.error("API request failed", { name: e instanceof Error ? e.name : "UnknownError", code: (e as { code?: string })?.code });
       return NextResponse.json({ error: "Erro interno. Tente de novo." }, { status: 500 });
     }
   };
 }
 
 export async function body(req: Request): Promise<Record<string, any>> {
-  try { return (await req.json()) as Record<string, any>; } catch { throw new HttpError(400, "Dados inválidos."); }
+  try {
+    const data = await req.json();
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
+    return data;
+  } catch { throw new HttpError(400, "Dados inválidos."); }
 }
 
 export function num(v: unknown, min: number, max: number, msg: string) {

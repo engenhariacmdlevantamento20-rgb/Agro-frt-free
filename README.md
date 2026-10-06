@@ -2,7 +2,19 @@
 
 Atende todo o Brasil.
 
-**Escrito sem poder rodar o sistema** (ambiente sem internet). Passou nos testes unitários (`npm test`) e na checagem de sintaxe, mas nunca foi executado com banco real. Use `/api/health` para diagnosticar.
+Projeto Next.js com App Router, preparado para implantação no Netlify usando Node.js 22. Os dados são persistidos no Netlify Database, com esquema Drizzle em `db/schema.ts`; arquivos enviados são armazenados no Netlify Blobs. Use `/instalar` e `/api/health` para diagnosticar a instalação após o deploy.
+
+## Validação e implantação automática
+
+O `netlify.toml` define o comando de produção e a pasta de publicação. Faça o deploy pelo repositório conectado ao site **agrofretebr**; o Netlify instala as dependências, executa o build e aplica as migrações automaticamente. Não publique a pasta do código por arrastar e soltar.
+
+Para conferir a estrutura sem gerar arquivos de produção, execute `npm ci`, `npm run check` e `npm run typecheck`. Não há uma suíte de testes unitários neste repositório. As migrações incluem as extensões PostGIS/citext, as tabelas, os 27 estados, os tipos de carga e as configurações iniciais. Não execute `drizzle-kit push` ou migrações manualmente contra o banco; para futuras alterações de esquema, use `npx drizzle-kit generate --name nome_da_alteracao`.
+
+A tarefa `daily-maintenance` é agendada pelo Netlify diariamente às 08:00 UTC e cuida dos avisos de vencimento e da retenção do rastreamento, sem depender de cron externo. A rota manual `/api/cron/daily` só aceita autorização por cabeçalho `Authorization: Bearer ...` quando `CRON_SECRET` estiver configurado; não coloque esse segredo na URL.
+
+Variáveis opcionais: `ADMIN_EMAIL` restringe a criação automática do administrador a uma conta com esse e-mail confirmado; configure-a antes do primeiro cadastro para impedir que outra pessoa assuma o painel. Sem essa variável, o primeiro perfil autenticado torna-se administrador, conforme o fluxo original. `ORS_API_KEY` habilita rotas, ou a chave pode ser cadastrada pelo administrador. `NEXT_PUBLIC_APP_URL` pode definir o endereço público; notificações também usam a URL do site fornecida pelo Netlify. Suporte, mapas próprios, push e WhatsApp automático usam as variáveis descritas nas seções abaixo. Nunca versione arquivos `.env` ou credenciais.
+
+Os planos pagos e os dados para PIX são definidos pelo administrador: a instalação não inventa preços nem informações de pagamento. O período inicial é de 30 dias e o bloqueio por assinatura começa desligado.
 
 ## O que existe
 - **Fase 1:** cadastro/login, fazendas com mapa e GPS, caminhões, novo transporte com rota (asfalto/terra) e ajuste por pontos, oportunidades, propostas, contratação, contato por WhatsApp, status do transporte, documentos, avaliações, histórico.
@@ -15,10 +27,10 @@ Atende todo o Brasil.
 Se for subir pelo GitHub, rode antes **`VERIFICAR.bat`** (ou `bash verificar.sh`) na pasta do repositório: ele lista qualquer arquivo que esteja faltando. Se o site também estiver ligado ao GitHub, quem publicar por último vence; use um jeito só.
 Não use "arrastar e soltar" no Netlify: esse jeito não roda o build e falha com erro no plugin `@netlify/plugin-nextjs`.
 
-1. **Banco (Netlify Database):** já vem ligado ao site. A cada deploy, o Netlify aplica sozinho as migrações de `netlify/database/migrations/` (tabelas, os 27 estados e os municípios de GO, TO e DF; os municípios dos demais estados são buscados no IBGE na primeira vez que alguém escolhe o estado). Não precisa criar banco nem variável `DATABASE_URL`.
+1. **Banco (Netlify Database):** já vem ligado ao site. A cada deploy, o Netlify aplica sozinho as migrações de `netlify/database/migrations/` (tabelas e os 27 estados). Os municípios são buscados no IBGE na primeira vez que alguém escolhe o estado, ou podem ser carregados pelo administrador. Não precisa criar banco nem variável `DATABASE_URL`.
 2. **Login (Netlify Identity):** já vem ativado. Em *Project configuration > Identity* você escolhe se o cadastro é aberto ou só por convite e se o e-mail precisa ser confirmado (*autoconfirm*). Para dar o papel de administrador a alguém, abra o usuário em *Identity* e adicione o papel `admin`.
 3. **Abra `https://SEU-SITE/instalar`** para conferir se o banco e as tabelas estão prontos.
-4. **Crie sua conta** pelo site. A primeira conta criada vira a administradora automaticamente.
+4. **Crie sua conta** pelo site e entre no painel. Com `ADMIN_EMAIL`, use o e-mail configurado e confirme o cadastro. Sem essa variável, o primeiro perfil autenticado vira o administrador: faça isso antes de divulgar o site.
 5. **Entre, abra Painel admin** e cole a chave do HeiGIT/OpenRouteService no campo "Chave de rotas".
 
 Pronto. Não precisa instalar Node, rodar `npm` nem mexer no banco.
@@ -33,7 +45,7 @@ Se algo não funcionar, abra `/instalar` (mostra o que falta) ou `/api/health`. 
 - **WhatsApp:** os botões são links `wa.me`. Mensagens automáticas só funcionam com a API oficial da Meta configurada (veja “Avisos e WhatsApp automático”); são pagas por conversa. A verificação de número por WhatsApp não existe.
 - **E-mail:** só os e-mails do Netlify Identity (confirmação de conta e nova senha). Os demais avisos são internos e push.
 - **Outras cargas:** o app não tem regras específicas por tipo de carga (peso máximo por eixo, licenças de carga perigosa, documentos fiscais próprios). Cada transportador e produtor responde pela regularidade; as regras de documento continuam editáveis, mas não vêm preenchidas. Cargas muito grandes (máquinas, madeira em toras) podem exigir rota especial que o cálculo de caminhão da OpenRouteService não garante.
-- **Documentos:** guardados no banco (até 5 MB). Sem regras de "documento obrigatório" nem integração com GTA.
+- **Documentos:** arquivos no Netlify Blobs (até 5 MB), com metadados e permissões no banco. Downloads só são liberados aos participantes do transporte. Sem regras de "documento obrigatório" nem integração com GTA.
 - **Mapa:** padrão usa o servidor público do OpenStreetMap, só para testes. Troque `NEXT_PUBLIC_MAP_TILES_URL` antes de divulgar.
 - **Termos e Privacidade:** são modelos; precisam de revisão jurídica.
 - **Backup:** depende do que o Netlify Database oferece no seu plano; confira.
